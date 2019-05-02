@@ -19,7 +19,37 @@ namespace Application
 		/// </summary>
 		private file_server ()
 		{
-			// TO DO Your own code
+			var transport = new Transport(BUFSIZE, APP);
+            Console.WriteLine(" >> Server Started");
+
+            while ((true))
+            {
+                try
+                {
+                    string serverResponse;
+                    byte[] sendBytes = new byte[BUFSIZE];
+                    byte[] bytesFrom = new byte[BUFSIZE];
+					transport.receive(ref bytesFrom);
+                    string dataFromClient = System.Text.Encoding.ASCII.GetString(bytesFrom);
+					var fileLength = LIB.check_File_Exists(dataFromClient);
+                    if (fileLength > 0)
+                    {
+                        serverResponse = "Error: File wasn't found";
+                        sendBytes = Encoding.ASCII.GetBytes(serverResponse);
+                        transport.send(sendBytes, sendBytes.Length);
+                        continue;
+                    }
+                    sendFile(dataFromClient,fileLength,transport);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    Console.WriteLine(" >> exit");
+                    Console.ReadLine();
+					return;
+                }
+            }
 		}
 
 		/// <summary>
@@ -36,7 +66,16 @@ namespace Application
 		/// </param>
 		private void sendFile(String fileName, long fileSize, Transport transport)
 		{
-			// TO DO Your own code
+
+            using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
+            {
+                byte[] buf = new byte[BUFSIZE];
+                int offset = 0;
+                while ((offset += fs.Read(buf, offset, BUFSIZE)) <= fileSize)
+                {
+                    transport.send(buf,BUFSIZE);
+                }
+            }
 		}
 
 		/// <summary>

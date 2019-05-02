@@ -1,9 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO.Ports;
 
-/// <summary>
-/// Link.
-/// </summary>
 namespace Linklaget
 {
 	/// <summary>
@@ -15,10 +13,6 @@ namespace Linklaget
 		/// The DELIMITE for slip protocol.
 		/// </summary>
 		const byte DELIMITER = (byte)'A';
-		/// <summary>
-		/// The buffer for link.
-		/// </summary>
-		private byte[] buffer;
 		/// <summary>
 		/// The serial port.
 		/// </summary>
@@ -45,7 +39,6 @@ namespace Linklaget
 			if(!serialPort.IsOpen)
 				serialPort.Open();
 
-			buffer = new byte[(BUFSIZE*2)];
 
 			// Uncomment the next line to use timeout
 			//serialPort.ReadTimeout = 500;
@@ -65,8 +58,34 @@ namespace Linklaget
 		/// </param>
 		public void send (byte[] buf, int size)
 		{
-	    	// TO DO Your own code
+            //Replace A's and B's in the buffer according to SLIP protocol
+			List<byte> listBuffer = new List<byte>();
+			listBuffer.Add(DELIMITER);
+			for (int i = 0; i < size; i++)
+			{
+				if(buf[i].Equals(DELIMITER))
+				{
+					listBuffer.Add((byte)'B');
+					listBuffer.Add((byte)'C');
+				}
+				else if(buf[i].Equals((byte)'B'))
+				{
+					listBuffer.Add((byte)'B');
+					listBuffer.Add((byte)'D');
+				}
+				else
+				{
+					listBuffer.Add(buf[i]);
+				}
+			}
+			listBuffer.Add(DELIMITER);
+
+			//Write buffer to /dev/ttyS1
+			var sendBuf = listBuffer.ToArray();
+			serialPort.Write(sendBuf, 0, sendBuf.Length);
+            
 		}
+
 
 		/// <summary>
 		/// Receive the specified buf and size.
@@ -74,13 +93,33 @@ namespace Linklaget
 		/// <param name='buf'>
 		/// Buffer.
 		/// </param>
-		/// <param name='size'>
-		/// Size.
-		/// </param>
 		public int receive (ref byte[] buf)
 		{
-	    	// TO DO Your own code
-			return 0;
+			int bytesRead = serialPort.Read(buf, 0, buf.Length);
+			List<byte> receiveBufList = new List<byte>(buf);
+            for (int i = 0; i < bytesRead; i++)
+			{
+				int j = i + 1;
+				if(receiveBufList[i] == (byte)'A')
+				{
+					receiveBufList.RemoveAt(i);
+				}
+				if(receiveBufList[i] == (byte)'B')
+				{
+					if(receiveBufList[j] == (byte)'C')
+					{
+						receiveBufList[i] = (byte)'A';
+						receiveBufList.RemoveAt(j);
+					}
+					else if(receiveBufList[j] == (byte)'D')
+					{
+						receiveBufList[i] = (byte)'B';
+						receiveBufList.RemoveAt(j);
+					}
+				}
+			}
+			buf = receiveBufList.ToArray();
+			return buf.Length;
 		}
 	}
 }

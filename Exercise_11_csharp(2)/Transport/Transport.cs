@@ -114,30 +114,28 @@ namespace Transportlaget
         /// </param>
         public void send(byte[] buf, int size)
         {
-            while(old_seqNo==seqNo)
+                            
+            byte[] sendBuf = new byte[buf.Length + 2];
+            sendBuf[0] = seqNo;
+            sendBuf[1] = (byte)TransType.DATA;
+            Array.Copy(buf, 0, sendBuf, 2, buf.Length);
+            checksum.calcChecksum(ref sendBuf, sendBuf.Length);
+           
+            bool ack;
+            int maxCount = 5;
+            do
             {
-                seqNo = old_seqNo;
-                byte[] sendBuf = new byte[buf.Length + 2];
-                sendBuf[0] = seqNo;
-                sendBuf[1] = (byte)TransType.DATA;
-                checksum.calcChecksum(ref sendBuf, sendBuf.Length);
-                buffer = sendBuf;
-                link.send(buffer,buffer.Length);
-                bool ack = receiveAck();
-                if (ack)
-                    break;
                 
-            }
-               
-            checksum.calcChecksum(ref buf, buf.Length);
+                ack = receiveAck();
+                maxCount--;
+            } while (!ack && maxCount>0);
             
-            for (int i = 0; i < 5;i++)
-            {
-                link.send(buf, size);
-                bool ack = receiveAck();
-                if (ack)
-                    break;
-            } 
+
+
+
+
+            old_seqNo = DEFAULT_SEQNO;
+            
             
         }
 
@@ -150,18 +148,34 @@ namespace Transportlaget
         public int receive (ref byte[] buf)
         {
             bool ack;
-            do
-            {
-                link.receive(ref buf);
-                ack = checksum.checkChecksum(buf, buf.Length);
-                if (ack)
+            ack = receiveAck();
+            if(dataReceived)
                 {
-                    sendAck(dataReceived);
-                 //   dateReceived = !datareceived;
+                   
+                    if (ack)
+                    {
+                        sendAck(true);                   
+                    }
+                    else
+                    {
+                        sendAck(false);
+                    }
+            
                 }
                 else
-                    sendAck(!dataReceived);
-            } while (!ack);
+                {
+                    if(old_seqNo==seqNo)
+                    {
+                        link.send(buffer, buffer.Length);
+                    }
+                    else
+                    {
+                        old_seqNo = seqNo;
+                    }
+                }
+                
+           
+            
             return buf.Length;
                              
         }

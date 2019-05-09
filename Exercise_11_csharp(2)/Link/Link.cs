@@ -25,14 +25,14 @@ namespace Linklaget
 		{
 			// Create a new SerialPort object with default settings.
 			#if DEBUG
-				if(APP.Equals("FILE_SERVER"))
-				{
-					serialPort = new SerialPort("/dev/ttyS0",115200,Parity.None,8,StopBits.One);
-				}
-				else
-				{
-					serialPort = new SerialPort("/dev/ttyS1",115200,Parity.None,8,StopBits.One);
-				}
+			if(APP.Equals("FILE_SERVER"))
+			{
+				serialPort = new SerialPort("/dev/ttyS1",115200,Parity.None,8,StopBits.One);
+			}
+			else
+            {
+                serialPort = new SerialPort("/dev/ttyS1", 115200, Parity.None, 8, StopBits.One);
+            }
 			#else
 				serialPort = new SerialPort("/dev/ttyS1",115200,Parity.None,8,StopBits.One);
 			#endif

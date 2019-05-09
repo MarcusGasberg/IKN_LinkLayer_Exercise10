@@ -39,6 +39,8 @@ namespace Application
                         transport.send(sendBytes, sendBytes.Length);
                         continue;
                     }
+                    sendBytes = BitConverter.GetBytes(fileLength);
+                    transport.send(sendBytes, sendBytes.Length);
                     sendFile(dataFromClient,fileLength,transport);
 
                 }

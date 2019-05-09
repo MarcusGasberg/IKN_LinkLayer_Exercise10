@@ -87,39 +87,43 @@ namespace Linklaget
 		}
 
 
-		/// <summary>
-		/// Receive the specified buf and size.
-		/// </summary>
-		/// <param name='buf'>
-		/// Buffer.
-		/// </param>
-		public int receive (ref byte[] buf)
-		{
-			int bytesRead = serialPort.Read(buf, 0, buf.Length);
-			List<byte> receiveBufList = new List<byte>(buf);
-            for (int i = 0; i < bytesRead; i++)
-			{
-				int j = i + 1;
-				if(receiveBufList[i] == (byte)'A')
-				{
-					receiveBufList.RemoveAt(i);
-				}
-				if(receiveBufList[i] == (byte)'B')
-				{
-					if(receiveBufList[j] == (byte)'C')
-					{
-						receiveBufList[i] = (byte)'A';
-						receiveBufList.RemoveAt(j);
-					}
-					else if(receiveBufList[j] == (byte)'D')
-					{
-						receiveBufList[i] = (byte)'B';
-						receiveBufList.RemoveAt(j);
-					}
-				}
-			}
-			buf = receiveBufList.ToArray();
-			return buf.Length;
-		}
-	}
+        /// <summary>
+        /// Receive the specified buf and size.
+        /// </summary>
+        /// <param name='buf'>
+        /// Buffer.
+        /// </param>
+        public int receive(ref byte[] buf)
+        {
+            int bytesRead = serialPort.Read(buf, 0, buf.Length);
+            List<byte> receiveBufList = new List<byte>(buf);
+            receiveBufList.RemoveRange(bytesRead, receiveBufList.Count - bytesRead);
+            for (int i = 0; i < receiveBufList.Count; i++)
+            {
+                int j = i + 1 < bytesRead - 1 ? i + 1 : i;
+                if (receiveBufList[i] == (byte)'A')
+                {
+                    receiveBufList.RemoveAt(i);
+                    --i;
+                }
+                else if (receiveBufList[i] == (byte)'B')
+                {
+                    if (receiveBufList[j] == (byte)'C')
+                    {
+                        receiveBufList[i] = (byte)'A';
+                        receiveBufList.RemoveAt(j);
+                        --i;
+                    }
+                    else if (receiveBufList[j] == (byte)'D')
+                    {
+                        receiveBufList[i] = (byte)'B';
+                        receiveBufList.RemoveAt(j);
+                        --i;
+                    }
+                }
+            }
+            buf = receiveBufList.ToArray();
+            return buf.Length;
+        }
+    }
 }

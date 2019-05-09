@@ -120,23 +120,7 @@ namespace Transportlaget
             sendBuf[1] = (byte)TransType.DATA;
             Array.Copy(buf, 0, sendBuf, 2, buf.Length);
             checksum.calcChecksum(ref sendBuf, sendBuf.Length);
-           
-            bool ack;
-            int maxCount = 5;
-            do
-            {
-                
-                ack = receiveAck();
-                maxCount--;
-            } while (!ack && maxCount>0);
-            
-
-
-
-
-            old_seqNo = DEFAULT_SEQNO;
-            
-            
+            link.send(sendBuf, sendBuf.Length);
         }
 
         /// <summary>

@@ -28,11 +28,11 @@ namespace Application
                 {
                     string serverResponse;
                     byte[] sendBytes = new byte[BUFSIZE];
-                    byte[] bytesFrom = new byte[BUFSIZE];
-					transport.receive(ref bytesFrom);
+                    byte[] bytesFrom = new byte[BUFSIZE]; 
+                    transport.receive(ref bytesFrom);
                     string dataFromClient = System.Text.Encoding.ASCII.GetString(bytesFrom);
-					var fileLength = LIB.check_File_Exists(dataFromClient);
-                    if (fileLength > 0)
+    				var fileLength = LIB.check_File_Exists(dataFromClient);
+                    if (fileLength == 0)
                     {
                         serverResponse = "Error: File wasn't found";
                         sendBytes = Encoding.ASCII.GetBytes(serverResponse);

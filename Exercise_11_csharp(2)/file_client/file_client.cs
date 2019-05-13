@@ -96,7 +96,7 @@ namespace Application
         /// </param>
         public static void Main (string[] args)
 		{
-			var test = new string[]{ "../../kaj.jpg" };
+			var test = new string[]{ "../../kaj.png" };
 
 			new file_client(test);
 		}

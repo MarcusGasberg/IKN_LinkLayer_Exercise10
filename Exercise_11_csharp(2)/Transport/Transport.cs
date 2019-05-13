@@ -140,25 +140,26 @@ namespace Transportlaget
                 bool ack = receiveAck();
                 if (ack)
                 {
-                    old_seqNo = seqNo;
+                   
+                   
                     if (dataReceived)
                     {
+                       /* if (old_seqNo != buffer[(int)TransCHKSUM.SEQNO])
+                            continue;//send funktion er ikke kaldt og deafult er der ikke sat til old_segNo. Vi skal derfor bare vente på næste besked sendt, hvilket vi gør med at forstsætte loop;
+                        bool check=checksum.checkChecksum(buffer, buffer.Length);
+                        if(!check)
+                        {
+                            sendAck(false);
+                            continue;
+                        }*/
+                        old_seqNo = buffer[(int)TransCHKSUM.SEQNO];
                         buf = buffer.Skip(4).ToArray();
                         sendAck(true);
                         return buf.Length;
                     }
+
                 }
-                else
-                {
-                    if (dataReceived)
-                    {
-                        sendAck(false);
-                    }
-                    if (old_seqNo == seqNo)
-                    {
-                        link.send(buffer, buffer.Length);
-                    }
-                }
+
             }
 
         }

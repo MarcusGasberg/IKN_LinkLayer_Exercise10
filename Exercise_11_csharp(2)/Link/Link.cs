@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
+using System.Linq;
+using System.Threading;
 
 namespace Linklaget
 {
@@ -17,6 +19,7 @@ namespace Linklaget
         /// The serial port.
         /// </summary>
         SerialPort serialPort;
+        SerialPort serialPort2;
 
         byte[] buffer;
         /// <summary>
@@ -34,11 +37,15 @@ namespace Linklaget
             {
                 serialPort = new SerialPort("/dev/ttyS1", 115200, Parity.None, 8, StopBits.One);
             }
+          
 #else
                 serialPort = new SerialPort("/dev/ttyS1",115200,Parity.None,8,StopBits.One);
 #endif
+            serialPort2 = new SerialPort("/dev/ttyS2", 115200, Parity.None, 8, StopBits.One);
             if (!serialPort.IsOpen)
                 serialPort.Open();
+            if (!serialPort2.IsOpen)
+                serialPort2.Open();
 
             buffer = new byte[BUFSIZE * 2];
 
@@ -97,12 +104,48 @@ namespace Linklaget
         /// </param>
         public int receive(ref byte[] buf)
         {
-            int bytesRead = serialPort.Read(buffer, 0, buffer.Length);
-            List<byte> receiveBufList = new List<byte>(buffer);
-            receiveBufList.RemoveRange(bytesRead, receiveBufList.Count - bytesRead);
+            var serialBuffer = new byte[2008];
+            int bytesRead;
+            int oldBytesRead = 0;
+            if (buffer[0] == (byte)0)
+            {
+                do
+                {
+                    bytesRead = serialPort2.Read(serialBuffer, 0, serialBuffer.Length);
+                    Array.Copy(serialBuffer, 0, buffer, oldBytesRead, bytesRead);
+                    oldBytesRead += bytesRead;
+                    Thread.Sleep(10);
+
+                } while (serialPort2.BytesToRead != 0);
+            }
+            List<byte> receiveBufList = new List<byte>();
+           // receiveBufList.RemoveRange(bytesRead, receiveBufList.Count - bytesRead);
+            int count = 0;
+            int skipIndex = 0;
+            bool intoRange = false;
+            for(int j=0;j<buffer.Length;j++)
+            {
+                if ((buffer[j] == (byte)'A') && count != 0)
+                {
+                    
+                    receiveBufList.AddRange(buffer.Skip(skipIndex).Take(count+1).ToArray());
+                    var b = buffer.Skip(j + 1).ToArray();
+                    Array.Copy(b, 0, buffer, 0, b.Length);
+                    break;
+                }
+                if ((buffer[j] == (byte)'A' && count == 0) || intoRange)
+                {
+                    intoRange = true;
+                    count++;
+                }
+                else
+                {
+                    skipIndex++;
+                }
+            }
             for (int i = 0; i < receiveBufList.Count; i++)
             {
-                int j = i + 1 < bytesRead - 1 ? i + 1 : i;
+                int j = i + 1 < count ? i + 1 : i;
                 if (receiveBufList[i] == (byte)'A')
                 {
                     receiveBufList.RemoveAt(i);

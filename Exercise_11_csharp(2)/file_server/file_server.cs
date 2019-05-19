@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using Transportlaget;
 using Library;
+using System.Threading;
 
 namespace Application
 {
@@ -40,6 +41,7 @@ namespace Application
                         continue;
                     }
                     sendBytes = BitConverter.GetBytes(fileLength);
+                    Thread.Sleep(100);
                     transport.send(sendBytes, sendBytes.Length);
                     sendFile(dataFromClient,fileLength,transport);
 
@@ -73,8 +75,19 @@ namespace Application
             {
                 byte[] buf = new byte[BUFSIZE];
                 int offset = 0;
+                int leftover = 0;
                 while ((offset += fs.Read(buf, offset, BUFSIZE)) <= fileSize)
                 {
+                    if (offset >= fileSize)
+                    {
+                        leftover = offset % BUFSIZE;
+                        if (leftover == 0)
+                            return;
+                    }
+                    else
+                    {
+                        leftover = BUFSIZE;
+                    }
                     transport.send(buf,BUFSIZE);
                 }
             }

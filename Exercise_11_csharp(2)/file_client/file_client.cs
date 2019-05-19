@@ -65,9 +65,20 @@ namespace Application
             else
             {
                 int offset = 0;
+                int leftover = 0;
                 while ((offset += transport.receive(ref receiveBuf)) <= fileSize)
                 {
-                    WriteToFile(receiveBuf, byteReceived);
+                    if (offset >= fileSize)
+                    {
+                        leftover = offset % BUFSIZE;
+                        if (leftover == 0)
+                            return;
+                    }
+                    else
+                    {
+                        leftover = BUFSIZE;
+                    }
+                    WriteToFile(receiveBuf,leftover);
                 }
                 Console.WriteLine($"File received with {offset} bytes");
             }

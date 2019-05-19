@@ -107,17 +107,20 @@ namespace Linklaget
             var serialBuffer = new byte[2008];
             int bytesRead;
             int oldBytesRead = 0;
-            if (buffer[0] == (byte)0)
-            {
+           // if (buffer[0] == (byte)0)
+           // {
+          
                 do
                 {
-                    bytesRead = serialPort2.Read(serialBuffer, 0, serialBuffer.Length);
+
+                    bytesRead = serialPort2.Read(serialBuffer, 0, 2008);
                     Array.Copy(serialBuffer, 0, buffer, oldBytesRead, bytesRead);
                     oldBytesRead += bytesRead;
-                    Thread.Sleep(10);
 
-                } while (serialPort2.BytesToRead != 0);
-            }
+
+                } while (buffer[oldBytesRead-1]!=(byte)'A');
+            //}
+
             List<byte> receiveBufList = new List<byte>();
            // receiveBufList.RemoveRange(bytesRead, receiveBufList.Count - bytesRead);
             int count = 0;
@@ -143,31 +146,36 @@ namespace Linklaget
                     skipIndex++;
                 }
             }
+
+            receiveBufList.RemoveAt(0);
+            receiveBufList.RemoveAt(receiveBufList.Count-1);
+            var lastbuf = new List<byte>(1000);
             for (int i = 0; i < receiveBufList.Count; i++)
             {
-                int j = i + 1 < count ? i + 1 : i;
-                if (receiveBufList[i] == (byte)'A')
-                {
-                    receiveBufList.RemoveAt(i);
-                    --i;
-                }
-                else if (receiveBufList[i] == (byte)'B')
+                int j = i + 1 <= receiveBufList.Count-1 ? i + 1 : i;
+            
+                if (receiveBufList[i] == (byte)'B')
                 {
                     if (receiveBufList[j] == (byte)'C')
                     {
-                        receiveBufList[i] = (byte)'A';
-                        receiveBufList.RemoveAt(j);
-                        --i;
+
+                        lastbuf.Add((byte)'A');
+                        i++;
+                        continue;
+
                     }
                     else if (receiveBufList[j] == (byte)'D')
                     {
-                        receiveBufList[i] = (byte)'B';
-                        receiveBufList.RemoveAt(j);
-                        --i;
+                        lastbuf.Add((byte)'B');
+                        i++;
+                        continue;
+
                     }
                 }
+                lastbuf.Add(receiveBufList[i]);
             }
-            buf = receiveBufList.ToArray();
+            buf = lastbuf.ToArray();
+        
             return buf.Length;
         }
     }

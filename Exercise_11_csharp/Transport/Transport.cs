@@ -101,6 +101,11 @@ namespace Transportlaget
                 (ackType ? (byte)buffer [(int)TransCHKSUM.SEQNO] : (byte)(buffer [(int)TransCHKSUM.SEQNO] + 1) % 2);
             ackBuf [(int)TransCHKSUM.TYPE] = (byte)(int)TransType.ACK;
             checksum.calcChecksum (ref ackBuf, (int)TransSize.ACKSIZE);
+            if (++errorCount == 3) // Simulate noise
+            {
+                ackBuf[1]++; // Important: Only spoil a checksum-field (ackBuf[0] or ackBuf[1])
+                Console.WriteLine("Noise!byte #1 is spoiled in the third transmitted ACK-package");
+            }
             link.send(ackBuf, (int)TransSize.ACKSIZE);
         }
 
@@ -117,11 +122,17 @@ namespace Transportlaget
         {
             do
             {
+
                 byte[] sendBuf = new byte[buf.Length + 4];
                 sendBuf[(int)TransCHKSUM.SEQNO] = seqNo;
                 sendBuf[(int)TransCHKSUM.TYPE] = (byte)TransType.DATA;
                 Array.Copy(buf, 0, sendBuf, 4, buf.Length);
                 checksum.calcChecksum(ref sendBuf, sendBuf.Length);
+                if (++errorCount == 3) // Simulate noise
+                {
+                    sendBuf[6]++; // Important: Only spoil a checksum-field (buffer[0] or buffer[1])
+                    Console.WriteLine("Noise!-byte #1 is spoiled in the sixth transmission");
+                }
                 link.send(sendBuf, sendBuf.Length);
             } while (!receiveAck());
             old_seqNo = DEFAULT_SEQNO;
@@ -144,14 +155,18 @@ namespace Transportlaget
                    
                     if (dataReceived)
                     {
-                       /* if (old_seqNo != buffer[(int)TransCHKSUM.SEQNO])
-                            continue;//send funktion er ikke kaldt og deafult er der ikke sat til old_segNo. Vi skal derfor bare vente på næste besked sendt, hvilket vi gør med at forstsætte loop;
+                        if (old_seqNo == buffer[(int)TransCHKSUM.SEQNO])
+                        {
+                            sendAck(true);
+                            continue;
+                        }  //send funktion er ikke kaldt og deafult er der ikke sat til old_segNo. Vi skal derfor bare vente på næste besked sendt, hvilket vi gør med at forstsætte loop;
                         bool check=checksum.checkChecksum(buffer, buffer.Length);
                         if(!check)
                         {
+                           
                             sendAck(false);
                             continue;
-                        }*/
+                        }
                         old_seqNo = buffer[(int)TransCHKSUM.SEQNO];
                         buf = buffer.Skip(4).ToArray();
                         sendAck(true);
